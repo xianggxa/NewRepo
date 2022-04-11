@@ -31,7 +31,7 @@ void HttpRespond::respond(int connfd)
 		
 		std::string _url = Tools::deescapeURL(httpparsing->getUrl());
 		std::string _file;
-		std::unordered_map<std::string, std::string> pro_val;
+		std::map<std::string, std::string> pro_val;
 		std::string _property;
 		std::string _val;
 		int _len = _url.length();
@@ -100,7 +100,7 @@ void HttpRespond::respond(int connfd)
 			std::string in_ti_string = "artist"; //插入标题的字符串
 
 	        //第二次查询应当显示在当前界面的对象
-			sql_query = "select * from artist_preview limit " + std::to_string((n_page-1)*ARTIST_PAGE_MAX)+","+std::to_string(ARTIST_PAGE_MAX)+";";
+			sql_query = "select * from artist_preview order by order_number limit " + std::to_string((n_page-1)*ARTIST_PAGE_MAX)+","+std::to_string(ARTIST_PAGE_MAX)+";";
 			if (servermysql->_mysql_query(sql_query)) {
 				return;
 			}

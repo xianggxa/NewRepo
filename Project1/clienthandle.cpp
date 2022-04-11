@@ -18,6 +18,7 @@ ClientHandle::~ClientHandle()
  void ClientHandle::requesthandle(int connfd)
 {
 		_httpparsing->init(connfd);
+		this->connfd = connfd;
 		/*
 		
 		std::cout << "[method]" << _httpparsing->getMethod() << std::endl;
@@ -36,10 +37,11 @@ ClientHandle::~ClientHandle()
 		}
 		std::cout << std::endl;
 		std::cout << "[body]" << _httpparsing->getBody() << std::endl;*/
-		if (_httpparsing->getLen() <= 0 || _httpparsing->getRequestParams().find("Connection")!= _httpparsing->getRequestParams().end()&& _httpparsing->getRequestParams().find("Connection")->second=="close") {
+		if (_httpparsing->getLen() <= 0 || _httpparsing->getRequestParams().find("Connection")!= _httpparsing->getRequestParams().end()&& _httpparsing->getRequestParams().find("Connection")->second=="close"||_httpparsing->getError()) {
 			connection = 0;//¶Ï¿ªÁ¬½Ó
 			printf("connection close\n");
 		}
+		if(!_httpparsing->getError())
 		_httprespond->respond(connfd);
 }
 
@@ -53,3 +55,8 @@ ClientHandle::~ClientHandle()
  {
 	 return connection;
  }
+ const int& ClientHandle::getfd() const
+ {
+	 return connfd;
+ }
+

@@ -23,7 +23,7 @@ public:
 	inline void _init(std::string database_name) {
 		
 		mysql_init(&mysql);
-		if (!mysql_real_connect(&mysql, "172.23.5.220", "root", "", database_name.c_str(), 3306, NULL, 0)) { //è¿æ¥mysqlæ•°æ®åº“ï¼Œå¹¶åˆ¤æ–­æ˜¯å¦å‡ºé”™(è¿”å›0ä¸ºå¤±è´¥)
+		if (!mysql_real_connect(&mysql, "172.23.5.220", "root", "13725249746zjh", database_name.c_str(), 3306, NULL, 0)) { //Á¬½ÓmysqlÊı¾İ¿â£¬²¢ÅĞ¶ÏÊÇ·ñ³ö´í(·µ»Ø0ÎªÊ§°Ü)
 		printf("mysql_real_connect:%s\n", mysql_error(&mysql));
 		//return -2;
 	}
@@ -32,6 +32,7 @@ public:
 		std::lock_guard<std::mutex> mylock_guard(mtx);
 		if (mysql_real_query(&mysql, query.c_str(), query.length())) {
 			printf("Database query failed\n");
+			printf("%s\n", query);
 			return 1;
 		}return 0;
 

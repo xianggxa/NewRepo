@@ -95,6 +95,7 @@ public:
     const std::string& getBody() const;
 
     const int& getLen() const;
+    const bool getError()const;
 
 private:
 
@@ -103,7 +104,11 @@ private:
 private:
     char buf[BUF_SIZE];//接收缓冲区
 
+    std::string content;
+
     int _reclen;
+
+    bool iserror;
 	
     std::string _method;//请求方法
 

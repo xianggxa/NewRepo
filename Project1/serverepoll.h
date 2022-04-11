@@ -10,6 +10,7 @@
 #include "clienthandle.h"
 #include "threadpool.h"
 #include <unistd.h>
+#include "timer.h"
 class ServerEpoll
 {
 private:
@@ -27,6 +28,10 @@ private:
 	std::threadpool* serthreadpool;
 
 	std::map<int, ClientHandle*> socket_clienthandle_map;
+
+	timer* server_timer;//计时器
+
+	std::mutex mtx;
 public:
 	ServerEpoll(int _listenfd) {
 		this->_listenfd = _listenfd;
@@ -38,10 +43,32 @@ public:
 		epoll_ctl(_epollfd, EPOLL_CTL_ADD, _listenfd, &_epev);
 		//将初始_listenfd的事件添加入监听
 		serthreadpool = new std::threadpool(THREAD_POLL_SIZE);
+
+		server_timer = new timer();
 	}
 	~ServerEpoll(){
 		delete serthreadpool;
 	
+	}
+	void handle_Timeout_event() {//处理超时连接
+		while (!server_timer->isEmpty()) {
+			time_node n_node = server_timer->get_top();
+			if (n_node.isTimeout()) {
+				int dfd = n_node.getfd();
+				if (socket_clienthandle_map.find(dfd) != socket_clienthandle_map.end()) {
+					std::lock_guard<std::mutex> mylock_guard(mtx);
+					epoll_ctl(_epollfd, EPOLL_CTL_DEL, dfd, nullptr);
+					//移除监听
+					close(dfd);
+					socket_clienthandle_map.erase(dfd);
+				}
+				server_timer->pop();
+
+			}
+			else break;
+
+		}
+
 	}
 	void start() {
 		printf("server start\n");
@@ -55,7 +82,7 @@ public:
 					int newfd = accept(_listenfd, nullptr, nullptr);
 					printf("newconnection %d\n", newfd);
 					_epev.data.fd = newfd;
-					_epev.events = EPOLLIN;
+					_epev.events = EPOLLIN | EPOLLET;
 					epoll_ctl(_epollfd, EPOLL_CTL_ADD, newfd, &_epev);
 					ClientHandle* clienthandle = new ClientHandle();
 					socket_clienthandle_map[newfd] = clienthandle;
@@ -68,24 +95,27 @@ public:
 
 					std::future<ClientHandle*> fu = serthreadpool->commit(ClientHandle::stahandle, clienthandle, nowfd);
 					//将http响应处理加入线程池任务队列
-
-					if (fu.get()->getconnection()==false) {//连接断开
-
-						epoll_ctl(_epollfd, EPOLL_CTL_DEL, nowfd, nullptr);
+					ClientHandle* _handle = fu.get();
+					if (_handle->getconnection()==false) {//连接断开
+						printf("close fd:%d\n", nowfd);
+						int dfd = _handle->getfd();
+						if (socket_clienthandle_map.find(dfd) != socket_clienthandle_map.end()) {
+						std::lock_guard<std::mutex> mylock_guard(mtx);
+						epoll_ctl(_epollfd, EPOLL_CTL_DEL, dfd, nullptr);
 						//移除监听
-						close(nowfd);
-						socket_clienthandle_map.erase(nowfd);
+						close(dfd);
+						socket_clienthandle_map.erase(dfd);
+						}
 
 						delete clienthandle;
-
-
-
 					}
+					
 
 
 
 				}
 			}
+			handle_Timeout_event();
 		}
 
 	}

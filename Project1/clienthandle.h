@@ -18,6 +18,8 @@ class ClientHandle{
 		HttpRespond* _httprespond;//httpÏìÓ¦¶ÔÏó
 
 		bool connection;
+
+		int connfd;
 public:
 	ClientHandle();
 
@@ -28,6 +30,8 @@ public:
 	static ClientHandle* stahandle(ClientHandle* ptr, int connfd);
 
 	const bool& getconnection() const;
+
+	const int& getfd() const;
 
 
 };
